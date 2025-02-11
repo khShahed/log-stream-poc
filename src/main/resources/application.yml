@@ -1,0 +1,34 @@
+server:
+  port: 8090
+  servlet:
+    context-path: /api/log-stream-poc
+
+spring:
+  application:
+    name: log-stream-poc
+  data:
+    mongodb:
+      uri: mongodb://root:password@localhost:27017/log-stream-poc
+      uuid-representation: standard
+      auto-index-creation: true
+  security:
+    user:
+      name: admin
+      password: admin123
+
+security:
+  jwt:
+    secret: "xVWEhsxRgePf7i6W08Foilk9Ue3MNjna"
+    expiration-time-ms: 3600000
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /api-docs
+
+
+logging:
+  level:
+    com.practice.log_stream_poc: INFO
+    org.springdoc: DEBUG
+    org.springframework.security: INFO
