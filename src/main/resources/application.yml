@@ -11,10 +11,12 @@ spring:
       uri: mongodb://root:password@localhost:27017/log-stream-poc
       uuid-representation: standard
       auto-index-creation: true
-  security:
-    user:
-      name: admin
-      password: admin123
+  jackson:
+    default-property-inclusion: non_absent
+    serialization:
+      write_dates_as_timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
 
 security:
   jwt:

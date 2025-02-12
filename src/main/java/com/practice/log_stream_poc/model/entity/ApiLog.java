@@ -1,6 +1,5 @@
 package com.practice.log_stream_poc.model.entity;
 
-import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;

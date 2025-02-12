@@ -2,7 +2,6 @@ package com.practice.log_stream_poc.controller;
 
 import com.practice.log_stream_poc.model.dto.AuthRequestDto;
 import com.practice.log_stream_poc.model.dto.AuthResponseDto;
-import com.practice.log_stream_poc.model.entity.User;
 import com.practice.log_stream_poc.service.AuthenticationService;
 import com.practice.log_stream_poc.service.JwtService;
 import lombok.RequiredArgsConstructor;

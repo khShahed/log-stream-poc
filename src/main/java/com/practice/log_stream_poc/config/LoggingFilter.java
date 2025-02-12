@@ -1,6 +1,5 @@
 package com.practice.log_stream_poc.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.log_stream_poc.model.entity.ApiLog;
 import com.practice.log_stream_poc.model.entity.RequestTiming;
 import com.practice.log_stream_poc.service.ApiLogService;
