@@ -17,6 +17,21 @@ spring:
       write_dates_as_timestamps: false
     deserialization:
       fail-on-unknown-properties: false
+  security:
+    user:
+      name: admin
+      password: admin123
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      compression-type: lz4
+    consumer:
+      group-id: log-consumer-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
 
 security:
   jwt:

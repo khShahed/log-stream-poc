@@ -1,8 +1,9 @@
 package com.practice.log_stream_poc.config;
 
+import com.practice.log_stream_poc.controller.ExceptionHandlingController;
+import com.practice.log_stream_poc.kafka.LogProducer;
 import com.practice.log_stream_poc.model.entity.ApiLog;
 import com.practice.log_stream_poc.model.entity.RequestTiming;
-import com.practice.log_stream_poc.service.ApiLogService;
 import com.practice.log_stream_poc.service.JwtService;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -18,15 +19,18 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class LoggingFilter implements Filter {
-    private final ApiLogService apiLogService;
     private final JwtService jwtService;
+    private final LogProducer logProducer;
+    private final ExceptionHandlingController exceptionHandlingController;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -40,7 +44,6 @@ public class LoggingFilter implements Filter {
         }
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         // Extract user info from JWT (assuming it's in the Authorization header)
         String token = httpRequest.getHeader("Authorization");
@@ -63,9 +66,17 @@ public class LoggingFilter implements Filter {
             .build();
         httpRequest.setAttribute("requestLog", apiLog);
 
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
 
-        logRequestResponse((ContentCachingRequestWrapper) httpRequest, (ContentCachingResponseWrapper) httpResponse);
+            wrappedResponse.copyBodyToResponse();
+            response.flushBuffer();
+            logRequestResponse((ContentCachingRequestWrapper) httpRequest, wrappedResponse);
+        }
     }
 
     private void logRequestResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response)
@@ -85,7 +96,7 @@ public class LoggingFilter implements Filter {
             }
             logEntry.setRequestTiming(timing);
 
-            apiLogService.saveLog(logEntry);
+            logProducer.sendLog(logEntry);
         }
     }
 
