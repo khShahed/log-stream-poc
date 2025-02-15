@@ -1,5 +1,5 @@
 server:
-  port: 8090
+  port: 8080
   servlet:
     context-path: /api/log-stream-poc
 
@@ -31,6 +31,12 @@ spring:
       group-id: log-consumer-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      fetch-min-size: 1000000  # 1MB minimum fetch size
+      fetch-max-wait: 3000     # wait up to 3 seconds for min-size
+      max-poll-records: 1000   # max records per poll
+      enable-auto-commit: false
+      properties:
+        max.poll.interval.ms: 300000    # 5 minutes max poll interval
 
 
 security:
