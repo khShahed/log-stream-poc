@@ -1,11 +1,33 @@
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: log-stream-poc-service
+  namespace: dev-log-stream-poc
 spec:
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080
+  replicas: 1
   selector:
-    app: log-stream-poc-service
+    matchLabels:
+      app: log-stream-poc-service
+  template:
+    metadata:
+      labels:
+        app: log-stream-poc-service
+    spec:
+      containers:
+        - name: log-stream-poc-service
+          image: log-stream-poc-service:latest
+          imagePullPolicy: Never    # This tells K8s to use local images
+          ports:
+            - containerPort: 8080
+#          env:
+#            - name: KAFKA_BOOTSTRAP_SERVERS
+#              value: "kafka:29092"
+#            - name: MONGODB_URI
+#              value: "mongodb://root:password@mongo:27017/log-stream-poc"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: log-stream-poc-config
