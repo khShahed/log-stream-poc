@@ -20,21 +20,23 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class LoggingFilter implements Filter {
+public class LoggingFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final LogProducer logProducer;
     private final ExceptionHandlingController exceptionHandlingController;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-        throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+        throws ServletException, IOException {
         if (!(request instanceof ContentCachingRequestWrapper)) {
             request = new ContentCachingRequestWrapper((HttpServletRequest) request);
         }
@@ -42,10 +44,7 @@ public class LoggingFilter implements Filter {
         if (!(response instanceof ContentCachingResponseWrapper)) {
             response = new ContentCachingResponseWrapper((HttpServletResponse) response);
         }
-
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-
-        // Extract user info from JWT (assuming it's in the Authorization header)
         String token = httpRequest.getHeader("Authorization");
         String username = null;
         if (token != null && token.startsWith("Bearer ")) {
@@ -64,25 +63,25 @@ public class LoggingFilter implements Filter {
                     .build()
             )
             .build();
-        httpRequest.setAttribute("requestLog", apiLog);
 
+        MDC.clear();
         try {
             chain.doFilter(request, response);
         } catch (Exception e) {
+            MDC.put("error", e.getMessage());
             throw e;
         } finally {
             ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
 
             wrappedResponse.copyBodyToResponse();
             response.flushBuffer();
-            logRequestResponse((ContentCachingRequestWrapper) httpRequest, wrappedResponse);
+            logRequestResponse((ContentCachingRequestWrapper) httpRequest, wrappedResponse, apiLog);
         }
+        MDC.clear();
     }
 
-    private void logRequestResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response)
+    private void logRequestResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, ApiLog logEntry)
         throws IOException {
-        ApiLog logEntry = (ApiLog) request.getAttribute("requestLog");
-
         if (logEntry != null) {
             response.setHeader("X-Request-Id", logEntry.getRequestId());
             var timing = logEntry.getRequestTiming();
@@ -93,6 +92,9 @@ public class LoggingFilter implements Filter {
             logEntry.setRequestBody(getRequestBody(request));
             if (isJsonResponse(response)) {
                 logEntry.setResponseBody(getResponseBody(response));
+            }
+            if (MDC.get("error") != null) {
+                logEntry.setErrorReason(MDC.get("error"));
             }
             logEntry.setRequestTiming(timing);
 
@@ -120,13 +122,11 @@ public class LoggingFilter implements Filter {
         return contentType != null && contentType.contains("application/json");
     }
 
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        // Initialization code if needed
-    }
-
-    @Override
-    public void destroy() {
-        // Cleanup code if needed
+    private String truncateIfNeeded(String body, int maxLength) {
+        if (body.length() > maxLength) {
+            log.warn("Body truncated. Original length: {}, Max length: {}", body.length(), maxLength);
+            return body.substring(0, maxLength) + "...(truncated)";
+        }
+        return body;
     }
 }

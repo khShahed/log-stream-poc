@@ -23,5 +23,6 @@ public class ApiLog implements Serializable {
     private String responseBody;
     private int responseStatus;
     private String username;
+    private String errorReason;
     private RequestTiming requestTiming;
 }
