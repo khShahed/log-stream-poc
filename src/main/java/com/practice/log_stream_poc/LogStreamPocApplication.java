@@ -9,5 +9,4 @@ public class LogStreamPocApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(LogStreamPocApplication.class, args);
 	}
-
 }

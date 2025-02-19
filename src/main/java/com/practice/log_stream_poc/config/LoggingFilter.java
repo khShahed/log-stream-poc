@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -71,7 +72,9 @@ public class LoggingFilter extends OncePerRequestFilter {
             MDC.put("error", e.getMessage());
             throw e;
         } finally {
+            response.setHeader("X-Request-Id", apiLog.getRequestId());
             ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
+            log.info("IsStreamingResposne: {}", isStreamingResponse(wrappedResponse));
 
             wrappedResponse.copyBodyToResponse();
             response.flushBuffer();
@@ -83,7 +86,6 @@ public class LoggingFilter extends OncePerRequestFilter {
     private void logRequestResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, ApiLog logEntry)
         throws IOException {
         if (logEntry != null) {
-            response.setHeader("X-Request-Id", logEntry.getRequestId());
             var timing = logEntry.getRequestTiming();
             timing.setRequestEndTime(LocalDateTime.now());
             timing.setTimeTakenMs(Duration.between(timing.getRequestStartTime(), timing.getRequestEndTime()).toMillis());
@@ -97,6 +99,7 @@ public class LoggingFilter extends OncePerRequestFilter {
                 logEntry.setErrorReason(MDC.get("error"));
             }
             logEntry.setRequestTiming(timing);
+            logEntry.setTimestamp(Instant.now());
 
             logProducer.sendLog(logEntry);
         }
@@ -128,5 +131,13 @@ public class LoggingFilter extends OncePerRequestFilter {
             return body.substring(0, maxLength) + "...(truncated)";
         }
         return body;
+    }
+
+    private boolean isStreamingResponse(ContentCachingResponseWrapper response) {
+        String contentType = response.getContentType();
+        return contentType != null
+            && contentType.contains("application/json") // Keep old compatibility
+            && response.getHeader("Transfer-Encoding") != null
+            && "chunked".equalsIgnoreCase(response.getHeader("Transfer-Encoding"));
     }
 }
