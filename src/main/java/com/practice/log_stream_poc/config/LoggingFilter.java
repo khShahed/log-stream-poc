@@ -74,11 +74,10 @@ public class LoggingFilter extends OncePerRequestFilter {
         } finally {
             response.setHeader("X-Request-Id", apiLog.getRequestId());
             ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
-            log.info("IsStreamingResposne: {}", isStreamingResponse(wrappedResponse));
+            logRequestResponse((ContentCachingRequestWrapper) httpRequest, wrappedResponse, apiLog);
 
             wrappedResponse.copyBodyToResponse();
             response.flushBuffer();
-            logRequestResponse((ContentCachingRequestWrapper) httpRequest, wrappedResponse, apiLog);
         }
         MDC.clear();
     }
@@ -111,12 +110,15 @@ public class LoggingFilter extends OncePerRequestFilter {
     }
 
     private String getResponseBody(ContentCachingResponseWrapper response) throws IOException {
-        byte[] content = response.getContentAsByteArray();
-        if (content.length > 0) {
-            String body = new String(content, StandardCharsets.UTF_8);
-            response.copyBodyToResponse(); // Ensures the response body is not lost
-            return body;
+        try {
+            byte[] content = response.getContentAsByteArray();
+            if (content.length > 0) {
+                return new String(content, StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
+
         return "";
     }
 
@@ -131,13 +133,5 @@ public class LoggingFilter extends OncePerRequestFilter {
             return body.substring(0, maxLength) + "...(truncated)";
         }
         return body;
-    }
-
-    private boolean isStreamingResponse(ContentCachingResponseWrapper response) {
-        String contentType = response.getContentType();
-        return contentType != null
-            && contentType.contains("application/json") // Keep old compatibility
-            && response.getHeader("Transfer-Encoding") != null
-            && "chunked".equalsIgnoreCase(response.getHeader("Transfer-Encoding"));
     }
 }

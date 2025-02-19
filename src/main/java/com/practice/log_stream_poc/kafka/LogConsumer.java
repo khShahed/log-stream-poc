@@ -1,7 +1,6 @@
 package com.practice.log_stream_poc.kafka;
 
 import com.practice.log_stream_poc.model.entity.ApiLog;
-import com.practice.log_stream_poc.repository.ApiLogRepository;
 import com.practice.log_stream_poc.service.ApiLogService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,8 @@ public class LogConsumer {
     @KafkaListener(
         topics = "topic-api-logs",
         groupId = "log-consumer-group",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "kafkaListenerContainerFactory",
+        autoStartup = "true"
     )
     public void consumeLog(@Payload List<ApiLog> logs) {
         log.info("Received {} logs", logs.size());

@@ -1,11 +1,8 @@
 package com.practice.log_stream_poc.service;
 
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.client.model.WriteModel;
 import com.practice.log_stream_poc.model.entity.ApiLog;
 import com.practice.log_stream_poc.repository.ApiLogRepository;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
