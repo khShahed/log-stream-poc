@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
+        logger.debug("In JwtAuthenticationFilter");
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -51,8 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        logger.info("Path: [" + path + "]");
-        return path.startsWith("/auth/");
+        boolean willNotFilter = path.startsWith("/api/log-stream-poc/auth/login");
+        logger.info("Path: [" + path + "]" + " willFilter: " + !willNotFilter);
+        return willNotFilter;
     }
 
 }

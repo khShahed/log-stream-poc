@@ -53,5 +53,5 @@ springdoc:
 logging:
   level:
     com.practice.log_stream_poc: INFO
-    org.springdoc: DEBUG
+    org.springdoc: INFO
     org.springframework.security: INFO

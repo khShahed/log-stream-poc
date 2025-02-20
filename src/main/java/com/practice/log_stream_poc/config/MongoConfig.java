@@ -4,10 +4,9 @@
 
 package com.practice.log_stream_poc.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.practice.log_stream_poc.service.TimeService;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,15 +18,9 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 @EnableMongoAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
 public class MongoConfig {
 
-    @NonNull
-    private final ObjectMapper objectMapper;
-
-    @NonNull
-    private final TimeService timeService;
-
     @Bean(name = "auditingDateTimeProvider")
     public DateTimeProvider dateTimeProvider() {
         // MongoDb supports up to milli seconds precision
-        return () -> Optional.of(timeService.getInstantNow());
+        return () -> Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     }
 }
