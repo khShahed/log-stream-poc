@@ -34,8 +34,9 @@ public class ApiLog implements Serializable {
     private String errorReason;
     private Instant timestamp;
     private RequestTiming requestTiming;
+    private String clientIp;
 
     @CreatedDate
-    @Indexed(expireAfter = "10m")  // TTL Index to delete records after 10 minutes
+    @Indexed(expireAfter = "2m")  // TTL Index to delete records after 2 minutes
     private Instant createdAt;
 }

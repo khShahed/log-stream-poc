@@ -20,7 +20,6 @@ public class MongoConfig {
 
     @Bean(name = "auditingDateTimeProvider")
     public DateTimeProvider dateTimeProvider() {
-        // MongoDb supports up to milli seconds precision
         return () -> Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     }
 }

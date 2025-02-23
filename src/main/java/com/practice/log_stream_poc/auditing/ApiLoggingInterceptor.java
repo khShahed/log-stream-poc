@@ -27,6 +27,7 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.debug("In Interceptor preHandle");
         MDC.clear();
         var requestId = request.getHeader("X-Request-ID");
         if (StringUtils.isBlank(requestId)) {
@@ -43,11 +44,19 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        log.debug("In Interceptor afterCompletion");
         try {
+            if (!(request instanceof ContentCachingRequestWrapper)) {
+                request = new ContentCachingRequestWrapper(request);
+            }
+
+            if (!(response instanceof ContentCachingResponseWrapper)) {
+                response = new ContentCachingResponseWrapper(response);
+            }
+
             String token = request.getHeader("Authorization");
             if (token != null) {
                 token = token.substring(7).trim();
-                log.info("token: {}", token);
                 MDC.put("username", jwtService.getUsernameFromToken(token));
             }
             Instant startTime = Instant.parse(MDC.get("requestStartTime"));
@@ -66,6 +75,7 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
                 .errorReason(errorReason)
                 .timestamp(startTime)
                 .responseStatus(response.getStatus())
+                .clientIp(request.getRemoteAddr())
                 .requestTiming(
                     RequestTiming.builder()
                         .requestStartTime(startTime)
@@ -94,7 +104,7 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
             byte[] buf = ((ContentCachingRequestWrapper) request).getContentAsByteArray();
             return buf.length > 0 ? new String(buf, StandardCharsets.UTF_8) : "";
         }
-        return "";
+        return "EMPTY_BODY";
     }
 
     private String getResponseBody(HttpServletResponse response) {
@@ -102,6 +112,6 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
             byte[] buf = ((ContentCachingResponseWrapper) response).getContentAsByteArray();
             return buf.length > 0 ? new String(buf, StandardCharsets.UTF_8) : "";
         }
-        return "";
+        return "EMPTY_BODY";
     }
 }
