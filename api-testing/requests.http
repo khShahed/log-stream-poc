@@ -1,0 +1,85 @@
+### Login
+POST http://localhost:8080/api/log-stream-poc/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+> {%
+  client.test("Request executed successfully", function() {
+    client.assert(response.status === 200, "Response status is not 200");
+  });
+
+  client.global.set("token", response.body.token);
+%}
+
+
+
+### GET count
+# @name getCount
+GET http://localhost:8080/api/log-stream-poc/count/latest
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+
+### GET error
+# @name getError
+GET http://localhost:8080/api/log-stream-poc/count/error
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### POST send and receive streaming content
+# @name postStream
+POST http://localhost:8080/api/log-stream-poc/count/stream
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+[
+  {
+    "index": 1,
+    "message": "Streaming request"
+  },
+  {
+    "index": 2,
+    "message": "Streaming request"
+  },
+  {
+    "index": 3,
+    "message": "Streaming request"
+  },
+  {
+    "index": 4,
+    "message": "Streaming request"
+  },
+  {
+    "index": 5,
+    "message": "Streaming request"
+  },
+  {
+    "index": 6,
+    "message": "Streaming request"
+  },
+  {
+    "index": 7,
+    "message": "Streaming request"
+  },
+  {
+    "index": 8,
+    "message": "Streaming request"
+  },
+  {
+    "index": 9,
+    "message": "Streaming request"
+  },
+  {
+    "index": 10,
+    "message": "Streaming request"
+  }
+]
+
+
+
+
+

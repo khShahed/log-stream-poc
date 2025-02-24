@@ -59,3 +59,9 @@ logging:
 management:
   endpoints:
     web.exposure.include: health, info, prometheus
+
+request-auditing:
+  enabled: true
+  log-percent: 100
+  max-request-body-size: 100_000
+  max-response-body-size: 10_000

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -24,6 +25,12 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 public class ApiLoggingInterceptor implements HandlerInterceptor {
     private final JwtService jwtService;
     private final LogProducer logProducer;
+
+    @Value("${request-auditing.max-request-body-size:100000}")
+    private int maxRequestBodySize;
+
+    @Value("${request-auditing.max-response-body-size:10000}")
+    private int maxResponseBodySize;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -101,17 +108,31 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
 
     private String getRequestBody(HttpServletRequest request) {
         if (request instanceof ContentCachingRequestWrapper) {
-            byte[] buf = ((ContentCachingRequestWrapper) request).getContentAsByteArray();
-            return buf.length > 0 ? new String(buf, StandardCharsets.UTF_8) : "";
+            byte[] content = ((ContentCachingRequestWrapper) request).getContentAsByteArray();
+            var requestBody = content.length > 0 ? new String(content, StandardCharsets.UTF_8) : "";
+
+            return truncateIfNeeded(requestBody, maxRequestBodySize);
         }
         return "EMPTY_BODY";
     }
 
     private String getResponseBody(HttpServletResponse response) {
         if (response instanceof ContentCachingResponseWrapper) {
-            byte[] buf = ((ContentCachingResponseWrapper) response).getContentAsByteArray();
-            return buf.length > 0 ? new String(buf, StandardCharsets.UTF_8) : "";
+            byte[] content = ((ContentCachingResponseWrapper) response).getContentAsByteArray();
+            if (content.length > 0) {
+                String body = new String(content, StandardCharsets.UTF_8);
+                return truncateIfNeeded(body, maxResponseBodySize);
+            }
         }
         return "EMPTY_BODY";
+    }
+
+    private String truncateIfNeeded(String body, int maxLength) {
+        if (StringUtils.isNotBlank(body) && body.length() > maxLength) {
+            log.debug("Body truncated. Original length: {}, Max length: {}", body.length(), maxLength);
+            return body.substring(0, maxLength) + "...(truncated)";
+        }
+
+        return body;
     }
 }
